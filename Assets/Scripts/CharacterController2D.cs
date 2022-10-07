@@ -109,4 +109,8 @@ public class CharacterController2D : MonoBehaviour
 		theScale.x *= -1;
 		transform.localScale = theScale;
 	}
+	private void OnCollisionEnter2D(Collision2D collision)
+	{
+		Debug.Log("Collision");
+	}
 }
