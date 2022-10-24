@@ -1,8 +1,5 @@
 using System.Collections;
-using System.Security.Cryptography.X509Certificates;
-using Unity.VisualScripting.ReorderableList;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class CharacterController2D : MonoBehaviour
 {
@@ -27,12 +24,13 @@ public class CharacterController2D : MonoBehaviour
 	private PlayerMovement PM;
 	public bool canChomp = true;
 	public bool OpenMouth = false;
-	private int maxVelocity = 10;
+	private ParticleSystem dustParticle;
 
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
 		PM = GetComponent<PlayerMovement>();
+		dustParticle = GetComponent<ParticleSystem>();
 	}
 
 
@@ -91,6 +89,7 @@ public class CharacterController2D : MonoBehaviour
 			// Add a vertical force to the player.
 			m_Grounded = false;
 			m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
+			dustParticle.Play();
 		}
 	}
 
@@ -148,7 +147,7 @@ public class CharacterController2D : MonoBehaviour
         m_Rigidbody2D.gravityScale = 6.5f;
         m_MovementSmoothing = 0.25f;
         OpenMouth = false;
-        PM.runSpeed = 40f;
+        PM.runSpeed = 50f;
         m_Rigidbody2D.AddForce((target.transform.position - transform.position).normalized * 5000f);
         yield return new WaitForSeconds(0.75f);
 		canChomp = true;

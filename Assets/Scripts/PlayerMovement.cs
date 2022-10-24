@@ -1,13 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.U2D.Animation;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour {
 
 	public CharacterController2D controller;
 
-	public float runSpeed = 40f;
+	public float runSpeed = 50f;
 
 	float horizontalMove = 0f;
 	bool jump = false;
