@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class CharacterController2D : MonoBehaviour
 {
-	[SerializeField] private float m_JumpForce = 400f;                           // Amount of force added when the player jumps.
+	[SerializeField] private float m_JumpForce = 800f;                           // Amount of force added when the player jumps.
 	[Range(0, 1)][SerializeField] private float m_CrouchSpeed = .36f;           // Amount of maxSpeed applied to crouching movement. 1 = 100%
 	[Range(0, .3f)][SerializeField] private float m_MovementSmoothing = .05f;   // How much to smooth out the movement
 	[SerializeField] private bool m_AirControl = false;                         // Whether or not a player can steer while jumping;
@@ -24,13 +24,16 @@ public class CharacterController2D : MonoBehaviour
 	private PlayerMovement PM;
 	public bool canChomp = true;
 	public bool OpenMouth = false;
-	private ParticleSystem dustParticle;
+	public ParticleSystem dustParticle;
+	public ParticleSystem dashParticle;
+    public ParticleSystem bounceParticle;
+    public ParticleSystem deadParticle;
+    public CanvasScript CS;
 
-	private void Awake()
+    private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
 		PM = GetComponent<PlayerMovement>();
-		dustParticle = GetComponent<ParticleSystem>();
 	}
 
 
@@ -45,7 +48,7 @@ public class CharacterController2D : MonoBehaviour
 		{
 			if (colliders[i].gameObject != gameObject)
 				m_Grounded = true;
-		}
+        }
 		if (ForcingRight == true)
 		{
 			m_Rigidbody2D.AddForce(new Vector2(270f, 0f));
@@ -58,7 +61,11 @@ public class CharacterController2D : MonoBehaviour
         {
             m_Rigidbody2D.AddForce((target.transform.position - transform.position).normalized * -10f);
         }
-
+		if (m_Grounded)
+		{
+            //m_MovementSmoothing = 0.05f;
+            //^^^ replace with void on landing/grounded animation
+        }
         m_Rigidbody2D.velocity = Vector2.ClampMagnitude(m_Rigidbody2D.velocity, 55);
     }
 
@@ -113,21 +120,26 @@ public class CharacterController2D : MonoBehaviour
 		if (collision.gameObject.CompareTag("Bouncer"))
 		{
 			m_Rigidbody2D.velocity = Vector2.zero;
-			m_Rigidbody2D.AddForce(new Vector2(0f, 1200f));
+			m_Rigidbody2D.AddForce(new Vector2(0f, 1250f));
 		}
 		if (collision.gameObject.CompareTag("BouncerRight"))
 		{
 			m_Rigidbody2D.velocity = Vector2.zero;
             m_MovementSmoothing = 0.25f;
-            m_Rigidbody2D.AddForce(new Vector2(1500f, 1111f));
-            StartCoroutine(ForceRight(1.35f));
+            m_Rigidbody2D.AddForce(new Vector2(1600f, 1211f));
+            StartCoroutine(ForceRight());
 		}
 		if (collision.gameObject.CompareTag("BouncerLeft"))
 		{
 			m_Rigidbody2D.velocity = Vector2.zero;
             m_MovementSmoothing = 0.25f;
-            m_Rigidbody2D.AddForce(new Vector2(-1500f, 1111f));
-            StartCoroutine(ForceLeft(1.35f));
+            m_Rigidbody2D.AddForce(new Vector2(-1600f, 1211f));
+            StartCoroutine(ForceLeft());
+        }
+		if (collision.gameObject.CompareTag("Hurt"))
+		{
+			StartCoroutine(Hurt());
+			CS.UIanim.SetTrigger("Respawn");
         }
 	}
     public IEnumerator LightChomp()
@@ -139,37 +151,61 @@ public class CharacterController2D : MonoBehaviour
 		PM.runSpeed = 0f;
 		m_AirControl = false;
 		m_Rigidbody2D.gravityScale = 0f;
-        m_MovementSmoothing = 0.25f;
-        StopCoroutine(ForceLeft(0.01f));
-        StopCoroutine(ForceRight(0.01f));
-        yield return new WaitForSeconds(0.6f);
+        m_MovementSmoothing = 0.05f;
+        StopCoroutine(ForceLeft());
+        StopCoroutine(ForceRight());
+        yield return new WaitForSeconds(0.45f);
+		dashParticle.Play();
         Debug.Log("CHOMP");
-        m_Rigidbody2D.gravityScale = 6.5f;
+        m_Rigidbody2D.gravityScale = 6.3f;
         m_MovementSmoothing = 0.25f;
         OpenMouth = false;
-        PM.runSpeed = 50f;
+        PM.runSpeed = 55f;
         m_Rigidbody2D.AddForce((target.transform.position - transform.position).normalized * 5000f);
-        yield return new WaitForSeconds(0.75f);
+        yield return new WaitForSeconds(0.3f);
 		canChomp = true;
+        dashParticle.Stop();
+        yield return new WaitForSeconds(0.5f);
         m_MovementSmoothing = 0.05f;
         m_Rigidbody2D.gravityScale = 3f;
-		m_AirControl = true;
+        m_AirControl = true;
     }
 
-    public IEnumerator ForceRight(float waitTime)
+    public IEnumerator ForceRight()
 	{
         //ForcingRight = true;
-		m_MovementSmoothing = 0.25f;
-        yield return new WaitForSeconds(waitTime);
+		m_MovementSmoothing = 0.24f;
+        yield return new WaitForSeconds(1.35f);
 		ForcingRight = false;
-        m_MovementSmoothing = 0.05f;
+        if (m_MovementSmoothing == 0.24f)
+        {
+            m_MovementSmoothing = 0.05f;
+        }
     }
-    public IEnumerator ForceLeft(float waitTime)
+    public IEnumerator ForceLeft()
     {
         //ForcingLeft = true;
-        m_MovementSmoothing = 0.25f;
-        yield return new WaitForSeconds(waitTime);
+        m_MovementSmoothing = 0.24f;
+        yield return new WaitForSeconds(1.35f);
         ForcingLeft = false;
-        m_MovementSmoothing = 0.05f;
+		if (m_MovementSmoothing == 0.24f)
+		{
+            m_MovementSmoothing = 0.05f;
+        }
+    }
+    public IEnumerator PlayBounceParticle()
+    {
+		//Plays the bounce particle effect, and then stops it soon after
+		bounceParticle.Play();
+        yield return new WaitForSeconds(0.5f);
+		bounceParticle.Stop();
+    }
+    public IEnumerator Hurt()
+    {
+		//Process of dying and respawning
+        PM.SR.color = Color.red;
+        deadParticle.Play();
+        yield return new WaitForSeconds(1.65f);
+        deadParticle.Stop();
     }
 }

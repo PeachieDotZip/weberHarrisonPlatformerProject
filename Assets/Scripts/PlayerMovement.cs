@@ -6,7 +6,7 @@ public class PlayerMovement : MonoBehaviour {
 
 	public CharacterController2D controller;
 
-	public float runSpeed = 50f;
+	public float runSpeed = 55f;
 
 	float horizontalMove = 0f;
 	bool jump = false;
@@ -48,12 +48,14 @@ public class PlayerMovement : MonoBehaviour {
 			normCollider.enabled = false;
 			bounceCollider.enabled = true;
             SR.color = Color.blue;
+			controller.bounceParticle.Play();
         }
 		else
 		{
             normCollider.enabled = true;
             bounceCollider.enabled = false;
             SR.color = Color.white;
+            controller.bounceParticle.Stop();
         }
 	}
 }
