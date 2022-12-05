@@ -36,7 +36,7 @@ public class LightScript : MonoBehaviour
                                    offset           // Point y+ toward the target.
                                  );
             Pcontroller.target = gameObject;
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Mouse0))
             {
                 StartCoroutine(Pcontroller.LightChomp());
             }

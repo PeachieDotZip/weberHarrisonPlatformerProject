@@ -4,7 +4,7 @@ using UnityEngine;
 public class CharacterController2D : MonoBehaviour
 {
 	[SerializeField] private float m_JumpForce = 800f;                           // Amount of force added when the player jumps.
-	[Range(0, 1)][SerializeField] private float m_CrouchSpeed = .36f;           // Amount of maxSpeed applied to crouching movement. 1 = 100%
+	//[Range(0, 1)][SerializeField] private float m_CrouchSpeed = .36f;           // Amount of maxSpeed applied to crouching movement. 1 = 100%
 	[Range(0, .3f)][SerializeField] private float m_MovementSmoothing = .05f;   // How much to smooth out the movement
 	[SerializeField] private bool m_AirControl = false;                         // Whether or not a player can steer while jumping;
 	[SerializeField] private LayerMask m_WhatIsGround;                          // A mask determining what is ground to the character
@@ -29,6 +29,18 @@ public class CharacterController2D : MonoBehaviour
     public ParticleSystem bounceParticle;
     public ParticleSystem deadParticle;
     public CanvasScript CS;
+	public Animator anim;
+	public Animator MainCamera;
+	private bool LandSFX_Ready;
+	//Audio
+	public AudioSource Jump;
+    //public AudioSource Walk;
+    public AudioSource Land;
+    public AudioSource Chomp;
+    public AudioSource Spin;
+    public AudioSource Death;
+	public AudioSource Step;
+
 
     private void Awake()
 	{
@@ -63,11 +75,46 @@ public class CharacterController2D : MonoBehaviour
         }
 		if (m_Grounded)
 		{
-            //m_MovementSmoothing = 0.05f;
-            //^^^ replace with void on landing/grounded animation
+			LandSFX_Ready = false;
+			if (LandSFX_Ready == true)
+			{
+                Land.Play();
+            }
         }
         m_Rigidbody2D.velocity = Vector2.ClampMagnitude(m_Rigidbody2D.velocity, 55);
     }
+
+	void Update()
+	{
+		//Animation Stuff
+		//anim.SetFloat("Speed", m_Rigidbody2D.velocity.magnitude);
+		anim.SetBool("isGrounded", m_Grounded);
+		anim.SetBool("Bouncy", PM.isBouncy);
+		//anim.SetBool("Jump", PM.jump);
+		if (PM.horizontalMove == 0f)
+		{
+			anim.SetBool("Moving", false);
+        }
+		else
+		{
+            anim.SetBool("Moving", true);
+        }
+	}
+	//Jump-Animation Bug Fix
+	public void CanLand_False()
+	{
+        anim.SetBool("CanLand", false);
+    }
+	public void CanLand_True()
+	{
+		anim.SetBool("CanLand", true);
+		LandSFX_Ready = true;
+	}
+	//Step SFX void for Walk animation
+	public void StepSFX()
+	{
+		Step.Play();
+	}
 
 	public void Move(float move, bool crouch, bool jump)
 	{
@@ -120,31 +167,41 @@ public class CharacterController2D : MonoBehaviour
 		if (collision.gameObject.CompareTag("Bouncer"))
 		{
 			m_Rigidbody2D.velocity = Vector2.zero;
-			m_Rigidbody2D.AddForce(new Vector2(0f, 1250f));
+			m_Rigidbody2D.AddForce(new Vector2(0f, 1300f));
+			anim.SetTrigger("Jump");
+			Jump.Play();
 		}
 		if (collision.gameObject.CompareTag("BouncerRight"))
 		{
 			m_Rigidbody2D.velocity = Vector2.zero;
             m_MovementSmoothing = 0.25f;
-            m_Rigidbody2D.AddForce(new Vector2(1600f, 1211f));
+            m_Rigidbody2D.AddForce(new Vector2(1600f, 1215f));
             StartCoroutine(ForceRight());
-		}
+            anim.SetTrigger("Jump");
+            Jump.Play();
+        }
 		if (collision.gameObject.CompareTag("BouncerLeft"))
 		{
 			m_Rigidbody2D.velocity = Vector2.zero;
             m_MovementSmoothing = 0.25f;
-            m_Rigidbody2D.AddForce(new Vector2(-1600f, 1211f));
+            m_Rigidbody2D.AddForce(new Vector2(-1600f, 1215f));
             StartCoroutine(ForceLeft());
+            anim.SetTrigger("Jump");
+            Jump.Play();
         }
 		if (collision.gameObject.CompareTag("Hurt"))
 		{
 			StartCoroutine(Hurt());
-			CS.UIanim.SetTrigger("Respawn");
+            Death.Play();
+            CS.UIanim.SetTrigger("Respawn");
         }
 	}
     public IEnumerator LightChomp()
     {
-		canChomp = false;
+		anim.SetTrigger("Chomp");
+        MainCamera.SetTrigger("Chomp");
+        Chomp.Play();
+        canChomp = false;
         OpenMouth = true;
         Debug.Log("OPEN");
         m_Rigidbody2D.velocity = Vector2.zero;
@@ -154,7 +211,7 @@ public class CharacterController2D : MonoBehaviour
         m_MovementSmoothing = 0.05f;
         StopCoroutine(ForceLeft());
         StopCoroutine(ForceRight());
-        yield return new WaitForSeconds(0.45f);
+        yield return new WaitForSeconds(0.60f);
 		dashParticle.Play();
         Debug.Log("CHOMP");
         m_Rigidbody2D.gravityScale = 6.3f;
@@ -203,9 +260,11 @@ public class CharacterController2D : MonoBehaviour
     public IEnumerator Hurt()
     {
 		//Process of dying and respawning
-        PM.SR.color = Color.red;
+        //PM.SR.color = Color.red;
+		anim.SetTrigger("Death");
         deadParticle.Play();
         yield return new WaitForSeconds(1.65f);
+        anim.ResetTrigger("Death");
         deadParticle.Stop();
     }
 }

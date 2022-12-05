@@ -10,6 +10,7 @@ public class DoorScript : MonoBehaviour
     private Collider2D Collider;
     public CanvasScript CS;
     public int DoorID;
+    public AudioSource Enter;
     // Start is called before the first frame update
     void Start()
     {
@@ -34,6 +35,7 @@ public class DoorScript : MonoBehaviour
     public IEnumerator EnterDoor()
     {
         UIanim.SetTrigger("EnterDoor");
+        Enter.Play();
         yield return new WaitForSeconds(1f);
         Player.transform.position = destination.transform.position;
         CS.RespawnPoint = destination;
